@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sociogram — CodeAlpha Social Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top navigation -->
+  <nav id="navbar" class="hidden">
+    <div class="nav-inner">
+      <a href="#" class="brand" data-page="feed">Sociogram</a>
+      <div class="nav-links">
+        <button data-page="feed">Home</button>
+        <button data-page="explore">Explore</button>
+        <button data-page="create">Create</button>
+        <button data-page="profile">Profile</button>
+        <button id="logoutBtn" class="ghost">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="app"></main>
+
+  <!-- ====== Templates ====== -->
+
+  <!-- Login -->
+  <template id="tpl-login">
+    <section class="auth-wrap">
+      <div class="auth-card">
+        <h1>Welcome back</h1>
+        <p class="muted">Login to continue</p>
+        <form id="loginForm">
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="password" name="password" placeholder="Password" required minlength="6" />
+          <button type="submit">Login</button>
+        </form>
+        <p class="switch">No account? <a href="#" data-page="register">Register</a></p>
+        <p class="error" id="loginErr"></p>
+      </div>
+    </section>
+  </template>
+
+  <!-- Register -->
+  <template id="tpl-register">
+    <section class="auth-wrap">
+      <div class="auth-card">
+        <h1>Create account</h1>
+        <p class="muted">Join the community</p>
+        <form id="registerForm">
+          <input type="text" name="username" placeholder="Username" required minlength="3" />
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="password" name="password" placeholder="Password" required minlength="6" />
+          <button type="submit">Register</button>
+        </form>
+        <p class="switch">Have an account? <a href="#" data-page="login">Login</a></p>
+        <p class="error" id="regErr"></p>
+      </div>
+    </section>
+  </template>
+
+  <!-- Feed -->
+  <template id="tpl-feed">
+    <section class="page">
+      <h2>Home Feed</h2>
+      <div id="feedList" class="post-list"></div>
+    </section>
+  </template>
+
+  <!-- Explore -->
+  <template id="tpl-explore">
+    <section class="page">
+      <h2>Explore</h2>
+      <div id="usersList" class="users-grid"></div>
+      <h3 style="margin-top:2rem">Recent posts</h3>
+      <div id="exploreList" class="post-list"></div>
+    </section>
+  </template>
+
+  <!-- Create -->
+  <template id="tpl-create">
+    <section class="page">
+      <h2>Create Post</h2>
+      <form id="createForm" class="card">
+        <textarea name="content" placeholder="What's on your mind?" rows="4" required maxlength="1000"></textarea>
+        <input type="url" name="image" placeholder="Optional image URL" />
+        <button type="submit">Post</button>
+      </form>
+    </section>
+  </template>
+
+  <!-- Profile -->
+  <template id="tpl-profile">
+    <section class="page">
+      <div id="profileHeader"></div>
+      <h3>Posts</h3>
+      <div id="profilePosts" class="post-list"></div>
+    </section>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
