@@ -1,0 +1,40 @@
+{
+  "name": "codealpha-socialmedia-backend",
+  "version": "1.0.0",
+  "description": "Express and MongoDB backend for CodeAlpha Social Media Platform",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "test": "cross-env NODE_ENV=test vitest run --globals"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "social-media",
+    "express",
+    "mongodb",
+    "jwt"
+  ],
+  "author": "CodeAlpha",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.20.0",
+    "morgan": "^1.10.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "mongodb-memory-server": "^10.3.0",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.14"
+  }
+}
