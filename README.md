@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CodeAlpha Social Media Platform
 
 A complete MERN-style social media web application built with React, Vite, Tailwind CSS, Node.js, Express, MongoDB, Mongoose, JWT authentication, and bcrypt password hashing.
@@ -304,3 +305,7 @@ Built for CodeAlpha by the project author.
 ## License
 
 MIT
+=======
+# CodeAlpha_SocialMediaPlatform
+# CodeAlpha Social Media Platform  A complete MERN-style social media web application built with React, Vite, Tailwind CSS, Node.js, Express, MongoDB, Mongoose, JWT authentication, and bcrypt password hashing.  The app includes authentication, user profiles, post creation, image previews, comments, likes, follow/unfollow 
+>>>>>>> 294d7cb2e6c69e8109c2b43006da58c3d9ae010d
