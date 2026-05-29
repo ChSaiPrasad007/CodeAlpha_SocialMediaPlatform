@@ -33,6 +33,7 @@ async function connectToDatabase() {
       })
       .catch((error) => {
         connectionPromise = null;
+        error.statusCode = 503;
         throw error;
       });
   }

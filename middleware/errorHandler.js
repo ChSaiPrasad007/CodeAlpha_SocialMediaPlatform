@@ -1,6 +1,10 @@
 module.exports = function errorHandler(error, req, res, next) {
   const statusCode = error.statusCode || error.status || 500;
 
+  if (statusCode >= 500) {
+    console.error(`[${req.method} ${req.originalUrl}]`, error);
+  }
+
   if (error.code === 11000) {
     const field = Object.keys(error.keyPattern || {})[0] || "field";
     return res.status(409).json({
@@ -22,9 +26,6 @@ module.exports = function errorHandler(error, req, res, next) {
   }
 
   res.status(statusCode).json({
-    message:
-      statusCode === 500
-        ? "Something went wrong on the server."
-        : error.message
+    message: statusCode === 500 ? "Something went wrong on the server." : error.message
   });
 };
