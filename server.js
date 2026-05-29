@@ -1,52 +1,101 @@
-// Entry point for the Social Media Platform backend.
-// Sets up Express, MongoDB, middleware, routes and serves the static frontend.
+const path = require("path");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const mongoose = require('mongoose');
-
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const postRoutes = require('./routes/posts');
-const commentRoutes = require('./routes/comments');
-const followRoutes = require('./routes/follow');
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/users");
+const postRoutes = require("./routes/posts");
+const commentRoutes = require("./routes/comments");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+let connectionPromise = null;
 
-// --- Middleware ---
-app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+async function connectToDatabase() {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
 
-// --- API Routes ---
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/follow', followRoutes);
+  if (!process.env.MONGODB_URI) {
+    const error = new Error("MONGODB_URI is not configured.");
+    error.statusCode = 503;
+    throw error;
+  }
 
-// --- Static frontend ---
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+  if (!connectionPromise) {
+    connectionPromise = mongoose
+      .connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 10000
+      })
+      .catch((error) => {
+        connectionPromise = null;
+        throw error;
+      });
+  }
 
-// --- Global error handler ---
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.status || 500).json({ message: err.message || 'Server error' });
-});
+  await connectionPromise;
+  return mongoose.connection;
+}
 
-// --- Start server after DB connection ---
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.set("trust proxy", 1);
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false
   })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
+);
+app.use(cors());
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  "/api",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 200,
+    standardHeaders: "draft-7",
+    legacyHeaders: false
+  })
+);
+
+app.use(express.static(path.join(__dirname)));
+
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected"
   });
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api", commentRoutes);
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.use(errorHandler);
+
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`SocialSphere server running on port ${port}`);
+  });
+}
+
+module.exports = app;

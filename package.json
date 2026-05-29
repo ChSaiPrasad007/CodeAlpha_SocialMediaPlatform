@@ -1,24 +1,33 @@
 {
-  "name": "codealpha-socialmediaplatform",
+  "name": "codealpha_socialmediaplatform",
   "version": "1.0.0",
-  "description": "Full Stack Social Media Platform built for the CodeAlpha Full Stack Development Internship.",
+  "description": "SocialSphere - a full stack social media platform built for the CodeAlpha Full Stack Development Internship.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "node --watch server.js"
   },
-  "keywords": ["social-media", "mern", "nodejs", "express", "mongodb", "codealpha"],
-  "author": "CodeAlpha Intern",
+  "keywords": [
+    "social-media",
+    "express",
+    "mongodb",
+    "mongoose",
+    "jwt",
+    "codealpha"
+  ],
+  "author": "CodeAlpha Internship Project",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.4.7",
     "express": "^4.19.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.4"
+    "mongoose": "^8.8.4"
   }
 }

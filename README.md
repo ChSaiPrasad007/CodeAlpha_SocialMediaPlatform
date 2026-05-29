@@ -1,125 +1,160 @@
 # CodeAlpha_SocialMediaPlatform
 
-A full-stack **Social Media Platform** built for the **CodeAlpha Full Stack Development Internship**. Users can register, post updates, like, comment, follow each other and see a personalized news feed — all backed by a Node/Express API and MongoDB.
+SocialSphere is the application built inside the `CodeAlpha_SocialMediaPlatform` project for the CodeAlpha Full Stack Development Internship. It uses a vanilla HTML, CSS, and JavaScript frontend with a Node.js, Express.js, MongoDB, and Mongoose backend. Authentication is handled with JWT tokens and bcrypt password hashing.
 
-## ✨ Features
+## Project Overview
 
-- 🔐 JWT authentication with bcrypt password hashing
-- 👤 User registration, login & logout
-- 📝 Create, edit and delete your own posts
-- ❤️ Like / unlike posts
-- 💬 Comment system (add & delete)
-- ➕ Follow / unfollow users
-- 🏠 Personalized news feed (your posts + followed users)
-- 🔎 Explore page to discover users
-- 📱 Fully responsive UI (mobile & desktop)
+The application allows users to register, log in, create posts, edit or delete their own posts, like posts, comment on posts, follow other users, and view a personalized home feed. The interface is responsive and works across desktop and mobile screens.
 
-## 🛠 Technologies
+## Features
 
-**Frontend:** HTML, CSS, Vanilla JavaScript
-**Backend:** Node.js, Express.js
-**Database:** MongoDB + Mongoose
-**Auth:** JWT, bcryptjs
+- User registration with secure password hashing
+- User login and stateless logout with JWT authentication
+- Authenticated user profile pages
+- Create, edit, and delete own posts
+- Like and unlike posts
+- Comment creation and deletion
+- Follow and unfollow users
+- Personalized home feed with followed users and own posts
+- User search
+- Responsive mobile-friendly design
+- RESTful Express API
+- Centralized authentication and error handling middleware
 
-## 📦 Installation
+## Technologies Used
 
-```bash
-# 1. Clone the repo
-git clone https://github.com/your-username/CodeAlpha_SocialMediaPlatform.git
-cd CodeAlpha_SocialMediaPlatform
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JSON Web Tokens
+- bcryptjs
+- Vercel
 
-# 2. Install dependencies
-npm install
+## Installation Steps
 
-# 3. Create environment file
-cp .env.example .env
-# then edit .env with your MongoDB URI & JWT secret
+1. Clone the repository.
 
-# 4. Run in development
-npm run dev
+   ```bash
+   git clone https://github.com/ChSaiPrasad007/CodeAlpha_SocialMediaPlatform.git
+   cd CodeAlpha_SocialMediaPlatform
+   ```
 
-# Or production
-npm start
+2. Install dependencies.
+
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env` file from `.env.example`.
+
+   ```bash
+   cp .env.example .env
+   ```
+
+4. Add your MongoDB connection string and JWT secret to `.env`.
+
+5. Start the server.
+
+   ```bash
+   npm start
+   ```
+
+6. Open the app at `http://localhost:3000`.
+
+## Environment Variables
+
+```env
+PORT=3000
+MONGODB_URI=your_mongodb_connection
+JWT_SECRET=your_secret_key
 ```
 
-App runs at **http://localhost:3000**.
+## API Routes
 
-## 🔑 Environment Variables
+### Authentication
 
-| Variable      | Description                            |
-|---------------|----------------------------------------|
-| `PORT`        | Server port (default: 3000)            |
-| `MONGODB_URI` | MongoDB connection string              |
-| `JWT_SECRET`  | Secret key used to sign JWT tokens     |
-
-## 🌐 API Routes
-
-### Auth
-| Method | Endpoint              | Description           |
-|--------|-----------------------|-----------------------|
-| POST   | `/api/auth/register`  | Register a new user   |
-| POST   | `/api/auth/login`     | Login & get JWT       |
-| GET    | `/api/auth/me`        | Current logged-in user |
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Log in and receive a JWT
+- `GET /api/auth/me` - Get the authenticated user
+- `POST /api/auth/logout` - Log out on the client
 
 ### Users
-| Method | Endpoint                  | Description              |
-|--------|---------------------------|--------------------------|
-| GET    | `/api/users`              | List users (discover)    |
-| GET    | `/api/users/:id`          | Get profile + their posts|
-| PUT    | `/api/users/me/update`    | Update own profile       |
+
+- `GET /api/users/search?q=query` - Search users by name or username
+- `GET /api/users/:username` - Get a user profile
+- `GET /api/users/:username/posts` - Get posts for a profile
+- `POST /api/users/:id/follow` - Follow a user
+- `DELETE /api/users/:id/follow` - Unfollow a user
 
 ### Posts
-| Method | Endpoint                  | Description                |
-|--------|---------------------------|----------------------------|
-| GET    | `/api/posts`              | News feed                  |
-| GET    | `/api/posts/explore`      | All recent posts           |
-| POST   | `/api/posts`              | Create a post              |
-| PUT    | `/api/posts/:id`          | Edit own post              |
-| DELETE | `/api/posts/:id`          | Delete own post            |
-| POST   | `/api/posts/:id/like`     | Toggle like                |
+
+- `GET /api/posts` - Get the authenticated user's feed
+- `POST /api/posts` - Create a post
+- `PUT /api/posts/:id` - Edit own post
+- `DELETE /api/posts/:id` - Delete own post
+- `POST /api/posts/:id/like` - Like a post
+- `DELETE /api/posts/:id/like` - Unlike a post
 
 ### Comments
-| Method | Endpoint                  | Description       |
-|--------|---------------------------|-------------------|
-| POST   | `/api/comments/:postId`   | Add comment       |
-| DELETE | `/api/comments/:id`       | Delete own comment|
 
-### Follow
-| Method | Endpoint              | Description                 |
-|--------|-----------------------|-----------------------------|
-| POST   | `/api/follow/:id`     | Toggle follow / unfollow    |
+- `GET /api/posts/:postId/comments` - Get comments for a post
+- `POST /api/posts/:postId/comments` - Add a comment
+- `DELETE /api/comments/:id` - Delete own comment or a comment on own post
 
-## 📁 Project Structure
+## Database Collections
 
-```
-CodeAlpha_SocialMediaPlatform/
-├── server.js               # Express entry point
-├── package.json
-├── .env.example
-├── .gitignore
-├── README.md
+- `users` - account credentials, profile details, and secure password hashes
+- `posts` - user-authored posts and like references
+- `comments` - comments linked to posts and authors
+- `follows` - follower and following relationships between users
+
+## Deployment Instructions
+
+1. Create a MongoDB Atlas database or provide another MongoDB connection string.
+2. Add the required environment variables in Vercel Project Settings:
+
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+
+3. Deploy to Vercel from the project root.
+
+   ```bash
+   vercel --prod
+   ```
+
+The included `vercel.json` routes static frontend files and all `/api/*` requests to the Express serverless adapter in `api/index.js`.
+
+## Project Structure
+
+```text
+.
+├── api/
+│   └── index.js
+├── middleware/
+│   ├── auth.js
+│   └── errorHandler.js
 ├── models/
-│   ├── User.js
+│   ├── Comment.js
+│   ├── Follow.js
 │   ├── Post.js
-│   └── Comment.js
+│   └── User.js
 ├── routes/
 │   ├── auth.js
-│   ├── users.js
-│   ├── posts.js
 │   ├── comments.js
-│   └── follow.js
-├── middleware/
-│   └── auth.js             # JWT verification
-└── public/                 # Frontend (served statically)
-    ├── index.html
-    ├── styles.css
-    └── script.js
+│   ├── posts.js
+│   └── users.js
+├── .env.example
+├── .gitignore
+├── index.html
+├── package-lock.json
+├── package.json
+├── README.md
+├── script.js
+├── server.js
+├── styles.css
+└── vercel.json
 ```
-
-## 🚀 Deployment
-
-The project works on any Node-hosting platform (Render, Railway, Vercel serverless, etc.). Provide the three env vars and run `npm start`.
-
-## 📄 License
-
-MIT — built as part of the **CodeAlpha Full Stack Development Internship**.

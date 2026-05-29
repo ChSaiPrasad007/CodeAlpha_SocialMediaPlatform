@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SocialSphere is a responsive full stack social media platform built with Node.js, Express, MongoDB, JWT, HTML, CSS, and vanilla JavaScript."
+    />
+    <title>SocialSphere</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" data-view="feed" aria-label="SocialSphere home">
+        <span class="brand-mark">S</span>
+        <span>SocialSphere</span>
+      </a>
+
+      <nav class="nav-actions" id="appNav" hidden>
+        <button class="nav-link active" type="button" data-view="feed">Feed</button>
+        <button class="nav-link" type="button" data-view="profile">Profile</button>
+        <button class="button button-ghost" type="button" id="logoutButton">
+          Logout
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="auth-shell" id="authShell">
+        <div class="auth-panel">
+          <div>
+            <p class="eyebrow">CodeAlpha Internship Project</p>
+            <h1>SocialSphere</h1>
+            <p class="auth-copy">
+              Connect, follow, post, like, and comment through a polished full
+              stack social platform.
+            </p>
+          </div>
+
+          <div class="auth-card">
+            <div class="auth-tabs" role="tablist" aria-label="Authentication">
+              <button
+                class="auth-tab active"
+                type="button"
+                id="showLogin"
+                aria-controls="loginForm"
+              >
+                Login
+              </button>
+              <button
+                class="auth-tab"
+                type="button"
+                id="showRegister"
+                aria-controls="registerForm"
+              >
+                Register
+              </button>
+            </div>
+
+            <form id="loginForm" class="form-stack">
+              <label>
+                Email
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  name="password"
+                  autocomplete="current-password"
+                  required
+                />
+              </label>
+              <button class="button button-primary" type="submit">Login</button>
+            </form>
+
+            <form id="registerForm" class="form-stack" hidden>
+              <label>
+                Name
+                <input type="text" name="name" autocomplete="name" required />
+              </label>
+              <label>
+                Username
+                <input
+                  type="text"
+                  name="username"
+                  autocomplete="username"
+                  minlength="3"
+                  maxlength="24"
+                  pattern="[A-Za-z0-9_]+"
+                  required
+                />
+              </label>
+              <label>
+                Email
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  name="password"
+                  autocomplete="new-password"
+                  minlength="6"
+                  required
+                />
+              </label>
+              <button class="button button-primary" type="submit">
+                Create Account
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="app-shell" id="appShell" hidden>
+        <aside class="side-panel">
+          <div class="mini-profile" id="miniProfile"></div>
+
+          <div class="search-card">
+            <label for="searchUsers">Find people</label>
+            <input
+              type="search"
+              id="searchUsers"
+              placeholder="Search by name or username"
+              autocomplete="off"
+            />
+            <div class="search-results" id="searchResults"></div>
+          </div>
+        </aside>
+
+        <section class="feed-column" id="feedView">
+          <form class="composer" id="postForm">
+            <label for="postContent">Create Post</label>
+            <textarea
+              id="postContent"
+              name="content"
+              maxlength="500"
+              placeholder="Share something with your sphere..."
+              required
+            ></textarea>
+            <div class="composer-actions">
+              <span id="postCount">0/500</span>
+              <button class="button button-primary" type="submit">Post</button>
+            </div>
+          </form>
+
+          <div class="section-heading">
+            <h2>Home Feed</h2>
+            <button class="button button-ghost" type="button" id="refreshFeed">
+              Refresh
+            </button>
+          </div>
+          <div class="post-list" id="feedList"></div>
+        </section>
+
+        <section class="profile-column" id="profileView" hidden>
+          <div class="profile-card" id="profileCard"></div>
+          <div class="section-heading">
+            <h2>Profile Posts</h2>
+          </div>
+          <div class="post-list" id="profilePosts"></div>
+        </section>
+      </section>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,60 +1,96 @@
-// Authentication routes — register, login, current user.
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const auth = require('../middleware/auth');
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-const sign = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+function asyncHandler(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
 
-// POST /api/auth/register
-router.post('/register', async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password)
-      return res.status(400).json({ message: 'All fields are required' });
+function signToken(user) {
+  return jwt.sign(
+    {
+      id: user._id,
+      username: user.username
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d"
+    }
+  );
+}
 
-    const exists = await User.findOne({ $or: [{ email }, { username }] });
-    if (exists) return res.status(400).json({ message: 'User already exists' });
+function publicUser(user) {
+  return {
+    id: user._id,
+    name: user.name,
+    username: user.username,
+    email: user.email,
+    bio: user.bio,
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt
+  };
+}
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, email, password: hashed });
+router.post(
+  "/register",
+  asyncHandler(async (req, res) => {
+    const { name, username, email, password } = req.body;
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "JWT_SECRET is not configured." });
+    }
+
+    const user = await User.create({
+      name,
+      username: String(username || "").toLowerCase(),
+      email,
+      password
+    });
 
     res.status(201).json({
-      token: sign(user._id),
-      user: { id: user._id, username: user.username, email: user.email },
+      token: signToken(user),
+      user: publicUser(user)
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
-  try {
+router.post(
+  "/login",
+  asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "JWT_SECRET is not configured." });
+    }
+
+    const user = await User.findOne({
+      email: String(email || "").toLowerCase()
+    }).select("+password");
+
+    if (!user || !(await user.comparePassword(password || ""))) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
 
     res.json({
-      token: sign(user._id),
-      user: { id: user._id, username: user.username, email: user.email },
+      token: signToken(user),
+      user: publicUser(user)
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
-// GET /api/auth/me — current logged-in user
-router.get('/me', auth, async (req, res) => {
-  const user = await User.findById(req.userId).select('-password');
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  res.json(user);
+router.get(
+  "/me",
+  auth,
+  asyncHandler(async (req, res) => {
+    res.json({ user: publicUser(req.user) });
+  })
+);
+
+router.post("/logout", auth, (req, res) => {
+  res.json({ message: "Logged out successfully." });
 });
 
 module.exports = router;
