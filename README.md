@@ -115,12 +115,13 @@ JWT_SECRET=your_secret_key
 ## Deployment Instructions
 
 1. Create a MongoDB Atlas database or provide another MongoDB connection string.
-2. Add the required environment variables in Vercel Project Settings:
+2. In MongoDB Atlas, open Network Access and allow your deployed server to connect. For Vercel, use an allowed deployment egress setup or add `0.0.0.0/0` for internship/demo use.
+3. Add the required environment variables in Vercel Project Settings:
 
    - `MONGODB_URI`
    - `JWT_SECRET`
 
-3. Deploy to Vercel from the project root.
+4. Deploy to Vercel from the project root.
 
    ```bash
    vercel --prod
