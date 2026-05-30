@@ -93,7 +93,7 @@ app.use(errorHandler);
 if (require.main === module) {
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
-    console.log(`TaskFlow server running on port ${port}`);
+    console.log(`Project Management Tool server running on port ${port}`);
   });
 }
 

@@ -1,6 +1,6 @@
-# CodeAlpha_TaskFlow
+# CodeAlpha_ProjectManagementTool
 
-TaskFlow is a full-stack collaborative project management tool built for CodeAlpha Full Stack Development Task 3. It works like a compact Trello/Asana-style board where authenticated users can create group projects, invite members, assign tasks, move cards through workflow columns, and communicate inside task comments.
+CodeAlpha Project Management Tool is a full-stack collaborative project management app built for CodeAlpha Full Stack Development Task 3. It works like a compact Trello/Asana-style board where authenticated users can create group projects, invite members, assign tasks, move cards through workflow columns, and communicate inside task comments.
 
 ## Features
 

@@ -1,7 +1,7 @@
 {
-  "name": "codealpha_taskflow",
+  "name": "codealpha_project_management_tool",
   "version": "1.0.0",
-  "description": "TaskFlow - a collaborative project management board built for the CodeAlpha full stack internship.",
+  "description": "CodeAlpha Project Management Tool - a collaborative project board built for the CodeAlpha full stack internship.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,7 +17,7 @@
     "jwt",
     "minimal"
   ],
-  "author": "CodeAlpha Internship Project",
+  "author": "CodeAlpha Project Management Tool",
   "license": "MIT",
   "engines": {
     "node": ">=18.18.0"
