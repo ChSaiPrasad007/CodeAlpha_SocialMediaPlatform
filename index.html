@@ -5,57 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="SocialSphere is a responsive full stack social media platform built with Node.js, Express, MongoDB, JWT, HTML, CSS, and vanilla JavaScript."
+      content="TaskFlow is a full-stack collaborative project management board with authentication, group projects, assigned tasks, and task comments."
     />
-    <title>SocialSphere</title>
+    <title>TaskFlow | CodeAlpha Project Management Tool</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#" data-view="feed" aria-label="SocialSphere home">
-        <span class="brand-mark">S</span>
-        <span>SocialSphere</span>
+      <a class="brand" href="#" aria-label="TaskFlow home">
+        <span class="brand-mark">TF</span>
+        <span>TaskFlow</span>
       </a>
 
       <nav class="nav-actions" id="appNav" hidden>
-        <button class="nav-link active" type="button" data-view="feed">Feed</button>
-        <button class="nav-link" type="button" data-view="profile">Profile</button>
-        <button class="button button-ghost" type="button" id="logoutButton">
-          Logout
-        </button>
+        <button class="button button-ghost" type="button" id="refreshBoard">Refresh</button>
+        <button class="button button-dark" type="button" id="logoutButton">Sign out</button>
       </nav>
     </header>
 
     <main>
       <section class="auth-shell" id="authShell">
         <div class="auth-panel">
-          <div>
-            <p class="eyebrow">CodeAlpha Internship Project</p>
-            <h1>SocialSphere</h1>
-            <p class="auth-copy">
-              Connect, follow, post, like, and comment through a polished full
-              stack social platform.
+          <div class="auth-copy">
+            <p class="eyebrow">CodeAlpha Full Stack Task 3</p>
+            <h1>Collaborative project boards for focused teams.</h1>
+            <p>
+              Create group projects, invite teammates, assign task cards, move work
+              across a board, and discuss details inside each task.
             </p>
           </div>
 
           <div class="auth-card">
             <div class="auth-tabs" role="tablist" aria-label="Authentication">
-              <button
-                class="auth-tab active"
-                type="button"
-                id="showLogin"
-                aria-controls="loginForm"
-              >
-                Login
-              </button>
-              <button
-                class="auth-tab"
-                type="button"
-                id="showRegister"
-                aria-controls="registerForm"
-              >
-                Register
-              </button>
+              <button class="auth-tab active" type="button" id="showLogin">Sign in</button>
+              <button class="auth-tab" type="button" id="showRegister">Create account</button>
             </div>
 
             <form id="loginForm" class="form-stack">
@@ -65,14 +48,9 @@
               </label>
               <label>
                 Password
-                <input
-                  type="password"
-                  name="password"
-                  autocomplete="current-password"
-                  required
-                />
+                <input type="password" name="password" autocomplete="current-password" required />
               </label>
-              <button class="button button-primary" type="submit">Login</button>
+              <button class="button button-primary" type="submit">Open workspace</button>
             </form>
 
             <form id="registerForm" class="form-stack" hidden>
@@ -98,71 +76,79 @@
               </label>
               <label>
                 Password
-                <input
-                  type="password"
-                  name="password"
-                  autocomplete="new-password"
-                  minlength="6"
-                  required
-                />
+                <input type="password" name="password" autocomplete="new-password" minlength="6" required />
               </label>
-              <button class="button button-primary" type="submit">
-                Create Account
-              </button>
+              <button class="button button-primary" type="submit">Create workspace</button>
             </form>
           </div>
         </div>
       </section>
 
-      <section class="app-shell" id="appShell" hidden>
-        <aside class="side-panel">
-          <div class="mini-profile" id="miniProfile"></div>
+      <section class="workspace" id="workspace" hidden>
+        <aside class="sidebar">
+          <div class="profile" id="profileCard"></div>
 
-          <div class="search-card">
-            <label for="searchUsers">Find people</label>
-            <input
-              type="search"
-              id="searchUsers"
-              placeholder="Search by name or username"
-              autocomplete="off"
-            />
-            <div class="search-results" id="searchResults"></div>
-          </div>
-        </aside>
-
-        <section class="feed-column" id="feedView">
-          <form class="composer" id="postForm">
-            <label for="postContent">Create Post</label>
-            <textarea
-              id="postContent"
-              name="content"
-              maxlength="500"
-              placeholder="Share something with your sphere..."
-              required
-            ></textarea>
-            <div class="composer-actions">
-              <span id="postCount">0/500</span>
-              <button class="button button-primary" type="submit">Post</button>
-            </div>
+          <form class="panel" id="projectForm">
+            <h2>New project</h2>
+            <label>
+              Project name
+              <input type="text" name="name" maxlength="80" placeholder="Website launch" required />
+            </label>
+            <label>
+              Description
+              <textarea name="description" maxlength="280" placeholder="What this team is shipping"></textarea>
+            </label>
+            <button class="button button-primary" type="submit">Create project</button>
           </form>
 
-          <div class="section-heading">
-            <h2>Home Feed</h2>
-            <button class="button button-ghost" type="button" id="refreshFeed">
-              Refresh
-            </button>
-          </div>
-          <div class="post-list" id="feedList"></div>
-        </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Projects</h2>
+              <span id="projectCount">0</span>
+            </div>
+            <div class="project-list" id="projectList"></div>
+          </section>
+        </aside>
 
-        <section class="profile-column" id="profileView" hidden>
-          <div class="profile-card" id="profileCard"></div>
-          <div class="section-heading">
-            <h2>Profile Posts</h2>
+        <section class="board-area">
+          <div class="board-head" id="boardHead">
+            <div>
+              <p class="eyebrow">Project board</p>
+              <h1>Select or create a project</h1>
+              <p class="muted">Your projects and tasks will appear here.</p>
+            </div>
           </div>
-          <div class="post-list" id="profilePosts"></div>
+
+          <div class="project-tools" id="projectTools" hidden>
+            <form id="memberForm" class="inline-form">
+              <input type="text" name="username" placeholder="Add member by username" required />
+              <button class="button button-dark" type="submit">Add member</button>
+            </form>
+
+            <form id="taskForm" class="task-form">
+              <input type="text" name="title" maxlength="120" placeholder="Task title" required />
+              <select name="assignee" id="assigneeSelect" aria-label="Assignee"></select>
+              <select name="priority" aria-label="Priority">
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+              </select>
+              <input type="date" name="dueDate" aria-label="Due date" />
+              <textarea name="description" maxlength="700" placeholder="Task details"></textarea>
+              <button class="button button-primary" type="submit">Add task</button>
+            </form>
+          </div>
+
+          <div class="board" id="board"></div>
         </section>
       </section>
+
+      <dialog class="task-dialog" id="taskDialog">
+        <form method="dialog" class="dialog-close">
+          <button class="icon-button" aria-label="Close task">x</button>
+        </form>
+        <div id="taskDetail"></div>
+      </dialog>
 
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </main>

@@ -8,8 +8,7 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
-const postRoutes = require("./routes/posts");
-const commentRoutes = require("./routes/comments");
+const projectRoutes = require("./routes/projects");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -83,8 +82,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/posts", postRoutes);
-app.use("/api", commentRoutes);
+app.use("/api/projects", projectRoutes);
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -95,7 +93,7 @@ app.use(errorHandler);
 if (require.main === module) {
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
-    console.log(`SocialSphere server running on port ${port}`);
+    console.log(`TaskFlow server running on port ${port}`);
   });
 }
 

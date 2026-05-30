@@ -1,27 +1,23 @@
-# CodeAlpha_SocialMediaPlatform
+# CodeAlpha_TaskFlow
 
-SocialSphere is the application built inside the `CodeAlpha_SocialMediaPlatform` project for the CodeAlpha Full Stack Development Internship. It uses a vanilla HTML, CSS, and JavaScript frontend with a Node.js, Express.js, MongoDB, and Mongoose backend. Authentication is handled with JWT tokens and bcrypt password hashing.
-
-## Project Overview
-
-The application allows users to register, log in, create posts, edit or delete their own posts, like posts, comment on posts, follow other users, and view a personalized home feed. The interface is responsive and works across desktop and mobile screens.
+TaskFlow is a full-stack collaborative project management tool built for CodeAlpha Full Stack Development Task 3. It works like a compact Trello/Asana-style board where authenticated users can create group projects, invite members, assign tasks, move cards through workflow columns, and communicate inside task comments.
 
 ## Features
 
-- User registration with secure password hashing
-- User login and stateless logout with JWT authentication
-- Authenticated user profile pages
-- Create, edit, and delete own posts
-- Like and unlike posts
-- Comment creation and deletion
-- Follow and unfollow users
-- Personalized home feed with followed users and own posts
-- User search
-- Responsive mobile-friendly design
-- RESTful Express API
-- Centralized authentication and error handling middleware
+- User registration and login with JWT authentication
+- Password hashing with bcryptjs
+- Group project creation
+- Project member invites by username
+- Kanban board with To do, In progress, Review, and Done columns
+- Task cards with title, description, priority, due date, assignee, creator, and status
+- Task status updates from the board
+- Task comment threads for collaboration
+- MongoDB/Mongoose backend models for users, projects, tasks, and comments
+- REST API built with Node.js and Express.js
+- Responsive vanilla HTML/CSS/JavaScript frontend
+- Vercel-ready serverless API routing
 
-## Technologies Used
+## Tech Stack
 
 - HTML5
 - CSS3
@@ -34,128 +30,98 @@ The application allows users to register, log in, create posts, edit or delete t
 - bcryptjs
 - Vercel
 
-## Installation Steps
+## Installation
 
-1. Clone the repository.
+```bash
+npm install
+```
 
-   ```bash
-   git clone https://github.com/ChSaiPrasad007/CodeAlpha_SocialMediaPlatform.git
-   cd CodeAlpha_SocialMediaPlatform
-   ```
-
-2. Install dependencies.
-
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env` file from `.env.example`.
-
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Add your MongoDB connection string and JWT secret to `.env`.
-
-5. Start the server.
-
-   ```bash
-   npm start
-   ```
-
-6. Open the app at `http://localhost:3000`.
-
-## Environment Variables
+Create a `.env` file:
 
 ```env
 PORT=3000
-MONGODB_URI=your_mongodb_connection
-JWT_SECRET=your_secret_key
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_long_random_secret
+```
+
+Run locally:
+
+```bash
+npm start
+```
+
+Open:
+
+```text
+http://localhost:3000
 ```
 
 ## API Routes
 
-### Authentication
+### Auth
 
-- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/register` - Register a user
 - `POST /api/auth/login` - Log in and receive a JWT
-- `GET /api/auth/me` - Get the authenticated user
-- `POST /api/auth/logout` - Log out on the client
+- `GET /api/auth/me` - Get current authenticated user
+- `POST /api/auth/logout` - Stateless logout response
 
 ### Users
 
-- `GET /api/users/search?q=query` - Search users by name or username
-- `GET /api/users/:username` - Get a user profile
-- `GET /api/users/:username/posts` - Get posts for a profile
-- `POST /api/users/:id/follow` - Follow a user
-- `DELETE /api/users/:id/follow` - Unfollow a user
+- `GET /api/users/search?q=username` - Search users to add to projects
 
-### Posts
+### Projects
 
-- `GET /api/posts` - Get the authenticated user's feed
-- `POST /api/posts` - Create a post
-- `PUT /api/posts/:id` - Edit own post
-- `DELETE /api/posts/:id` - Delete own post
-- `POST /api/posts/:id/like` - Like a post
-- `DELETE /api/posts/:id/like` - Unlike a post
+- `GET /api/projects` - List projects for current user
+- `POST /api/projects` - Create a project
+- `GET /api/projects/:projectId` - Get one project with tasks
+- `POST /api/projects/:projectId/members` - Add a project member by username
+
+### Tasks
+
+- `POST /api/projects/:projectId/tasks` - Create a task
+- `PUT /api/projects/:projectId/tasks/:taskId` - Update task fields/status
+- `DELETE /api/projects/:projectId/tasks/:taskId` - Delete a task
 
 ### Comments
 
-- `GET /api/posts/:postId/comments` - Get comments for a post
-- `POST /api/posts/:postId/comments` - Add a comment
-- `DELETE /api/comments/:id` - Delete own comment or a comment on own post
-
-## Database Collections
-
-- `users` - account credentials, profile details, and secure password hashes
-- `posts` - user-authored posts and like references
-- `comments` - comments linked to posts and authors
-- `follows` - follower and following relationships between users
-
-## Deployment Instructions
-
-1. Create a MongoDB Atlas database or provide another MongoDB connection string.
-2. In MongoDB Atlas, open Network Access and allow your deployed server to connect. For Vercel, use an allowed deployment egress setup or add `0.0.0.0/0` for internship/demo use.
-3. Add the required environment variables in Vercel Project Settings:
-
-   - `MONGODB_URI`
-   - `JWT_SECRET`
-
-4. Deploy to Vercel from the project root.
-
-   ```bash
-   vercel --prod
-   ```
-
-The included `vercel.json` routes static frontend files and all `/api/*` requests to the Express serverless adapter in `api/index.js`.
+- `GET /api/projects/:projectId/tasks/:taskId/comments` - List task comments
+- `POST /api/projects/:projectId/tasks/:taskId/comments` - Add a task comment
 
 ## Project Structure
 
 ```text
 .
-├── api/
-│   └── index.js
-├── middleware/
-│   ├── auth.js
-│   └── errorHandler.js
-├── models/
-│   ├── Comment.js
-│   ├── Follow.js
-│   ├── Post.js
-│   └── User.js
-├── routes/
-│   ├── auth.js
-│   ├── comments.js
-│   ├── posts.js
-│   └── users.js
-├── .env.example
-├── .gitignore
-├── index.html
-├── package-lock.json
-├── package.json
-├── README.md
-├── script.js
-├── server.js
-├── styles.css
-└── vercel.json
+|-- api/
+|   `-- index.js
+|-- middleware/
+|   |-- auth.js
+|   `-- errorHandler.js
+|-- models/
+|   |-- Comment.js
+|   |-- Project.js
+|   |-- Task.js
+|   `-- User.js
+|-- routes/
+|   |-- auth.js
+|   |-- projects.js
+|   `-- users.js
+|-- index.html
+|-- script.js
+|-- server.js
+|-- styles.css
+|-- package.json
+`-- vercel.json
+```
+
+## Deployment
+
+Add the following environment variables in Vercel Project Settings:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+
+Then deploy:
+
+```bash
+npx vercel --prod
 ```

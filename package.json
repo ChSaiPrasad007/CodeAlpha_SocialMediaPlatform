@@ -1,19 +1,21 @@
 {
-  "name": "codealpha_socialmediaplatform",
+  "name": "codealpha_taskflow",
   "version": "1.0.0",
-  "description": "SocialSphere - a full stack social media platform built for the CodeAlpha Full Stack Development Internship.",
+  "description": "TaskFlow - a collaborative project management board built for the CodeAlpha full stack internship.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
   "keywords": [
-    "social-media",
+    "project-management",
+    "task-board",
+    "collaboration",
     "express",
     "mongodb",
     "mongoose",
     "jwt",
-    "codealpha"
+    "minimal"
   ],
   "author": "CodeAlpha Internship Project",
   "license": "MIT",

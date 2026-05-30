@@ -1,36 +1,42 @@
+const columns = [
+  { id: "todo", label: "To do" },
+  { id: "progress", label: "In progress" },
+  { id: "review", label: "Review" },
+  { id: "done", label: "Done" }
+];
+
 const state = {
-  token: localStorage.getItem("socialsphere_token"),
+  token: localStorage.getItem("taskflow_token"),
   currentUser: null,
-  feed: [],
-  profile: null,
-  profilePosts: [],
-  comments: {},
-  openComments: new Set(),
-  editingPostId: null,
-  activeView: "feed"
+  projects: [],
+  activeProject: null,
+  tasks: [],
+  activeTask: null,
+  comments: []
 };
 
 const elements = {
   appNav: document.getElementById("appNav"),
   authShell: document.getElementById("authShell"),
-  appShell: document.getElementById("appShell"),
+  workspace: document.getElementById("workspace"),
   loginForm: document.getElementById("loginForm"),
   registerForm: document.getElementById("registerForm"),
   showLogin: document.getElementById("showLogin"),
   showRegister: document.getElementById("showRegister"),
   logoutButton: document.getElementById("logoutButton"),
-  miniProfile: document.getElementById("miniProfile"),
-  feedView: document.getElementById("feedView"),
-  profileView: document.getElementById("profileView"),
-  feedList: document.getElementById("feedList"),
-  profilePosts: document.getElementById("profilePosts"),
+  refreshBoard: document.getElementById("refreshBoard"),
   profileCard: document.getElementById("profileCard"),
-  postForm: document.getElementById("postForm"),
-  postContent: document.getElementById("postContent"),
-  postCount: document.getElementById("postCount"),
-  refreshFeed: document.getElementById("refreshFeed"),
-  searchUsers: document.getElementById("searchUsers"),
-  searchResults: document.getElementById("searchResults"),
+  projectForm: document.getElementById("projectForm"),
+  projectList: document.getElementById("projectList"),
+  projectCount: document.getElementById("projectCount"),
+  boardHead: document.getElementById("boardHead"),
+  projectTools: document.getElementById("projectTools"),
+  memberForm: document.getElementById("memberForm"),
+  taskForm: document.getElementById("taskForm"),
+  assigneeSelect: document.getElementById("assigneeSelect"),
+  board: document.getElementById("board"),
+  taskDialog: document.getElementById("taskDialog"),
+  taskDetail: document.getElementById("taskDetail"),
   toast: document.getElementById("toast")
 };
 
@@ -45,23 +51,10 @@ async function api(path, options = {}) {
   });
 
   const data = await response.json().catch(() => ({}));
-
   if (!response.ok) {
     throw new Error(data.message || "Request failed.");
   }
-
   return data;
-}
-
-function showToast(message, type = "info") {
-  elements.toast.textContent = message;
-  elements.toast.style.background =
-    type === "error" ? "var(--danger)" : "var(--ink)";
-  elements.toast.classList.add("show");
-  window.clearTimeout(showToast.timeout);
-  showToast.timeout = window.setTimeout(() => {
-    elements.toast.classList.remove("show");
-  }, 3000);
 }
 
 function escapeHtml(value = "") {
@@ -74,7 +67,7 @@ function escapeHtml(value = "") {
 }
 
 function initials(user) {
-  return (user?.name || user?.username || "S")
+  return (user?.name || user?.username || "TF")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -84,12 +77,23 @@ function initials(user) {
 }
 
 function formatDate(date) {
+  if (!date) {
+    return "No due date";
+  }
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
+    year: "numeric"
   }).format(new Date(date));
+}
+
+function showToast(message, type = "info") {
+  elements.toast.textContent = message;
+  elements.toast.className = `toast show ${type}`;
+  window.clearTimeout(showToast.timeout);
+  showToast.timeout = window.setTimeout(() => {
+    elements.toast.classList.remove("show");
+  }, 2800);
 }
 
 function setAuthMode(mode) {
@@ -102,236 +106,190 @@ function setAuthMode(mode) {
 
 function setAuthenticated(isAuthenticated) {
   elements.authShell.hidden = isAuthenticated;
-  elements.appShell.hidden = !isAuthenticated;
+  elements.workspace.hidden = !isAuthenticated;
   elements.appNav.hidden = !isAuthenticated;
 }
 
-function renderMiniProfile() {
+function renderProfile() {
   if (!state.currentUser) {
-    elements.miniProfile.innerHTML = "";
+    elements.profileCard.innerHTML = "";
     return;
   }
 
-  elements.miniProfile.innerHTML = `
-    <div class="identity">
-      <span class="avatar">${escapeHtml(initials(state.currentUser))}</span>
-      <div>
-        <strong>${escapeHtml(state.currentUser.name)}</strong>
-        <span>@${escapeHtml(state.currentUser.username)}</span>
-      </div>
+  elements.profileCard.innerHTML = `
+    <span class="avatar">${escapeHtml(initials(state.currentUser))}</span>
+    <div>
+      <strong>${escapeHtml(state.currentUser.name)}</strong>
+      <span>@${escapeHtml(state.currentUser.username)}</span>
     </div>
-    <p class="muted">${escapeHtml(
-      state.currentUser.bio || "Welcome back to your sphere."
-    )}</p>
   `;
 }
 
-function setActiveView(view) {
-  state.activeView = view;
-  elements.feedView.hidden = view !== "feed";
-  elements.profileView.hidden = view !== "profile";
-
-  document.querySelectorAll(".nav-link").forEach((button) => {
-    button.classList.toggle("active", button.dataset.view === view);
-  });
+function renderProjects() {
+  elements.projectCount.textContent = state.projects.length;
+  elements.projectList.innerHTML = state.projects.length
+    ? state.projects
+        .map(
+          (project) => `
+            <button class="project-item ${
+              state.activeProject?.id === project.id ? "active" : ""
+            }" type="button" data-project-id="${project.id}">
+              <span>${escapeHtml(project.name)}</span>
+              <small>${project.taskCount || 0} tasks</small>
+            </button>
+          `
+        )
+        .join("")
+    : `<div class="empty-state">Create your first group project.</div>`;
 }
 
-function renderPost(post, scope) {
-  const comments = state.comments[post.id] || [];
-  const commentsOpen = state.openComments.has(post.id);
-  const isEditing = state.editingPostId === post.id;
-  const ownerActions = post.canEdit
-    ? `
-      <button class="action-button" type="button" data-action="edit" data-id="${post.id}">Edit</button>
-      <button class="action-button" type="button" data-action="delete" data-id="${post.id}">Delete</button>
-    `
-    : "";
+function renderBoardHead() {
+  if (!state.activeProject) {
+    elements.projectTools.hidden = true;
+    elements.boardHead.innerHTML = `
+      <div>
+        <p class="eyebrow">Project board</p>
+        <h1>Select or create a project</h1>
+        <p class="muted">Your projects and tasks will appear here.</p>
+      </div>
+    `;
+    return;
+  }
 
+  elements.projectTools.hidden = false;
+  const members = state.activeProject.members
+    .map((member) => `<span class="member-pill">${escapeHtml(member.name)}</span>`)
+    .join("");
+
+  elements.boardHead.innerHTML = `
+    <div>
+      <p class="eyebrow">Project board</p>
+      <h1>${escapeHtml(state.activeProject.name)}</h1>
+      <p class="muted">${escapeHtml(
+        state.activeProject.description || "No description yet."
+      )}</p>
+    </div>
+    <div class="member-row">${members}</div>
+  `;
+}
+
+function renderAssignees() {
+  const members = state.activeProject?.members || [];
+  elements.assigneeSelect.innerHTML = `
+    <option value="">Unassigned</option>
+    ${members
+      .map((member) => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
+      .join("")}
+  `;
+}
+
+function renderTask(task) {
   return `
-    <article class="post-card" data-post-id="${post.id}" data-scope="${scope}">
-      <div class="identity">
-        <button class="avatar" type="button" data-action="open-profile" data-username="${escapeHtml(
-          post.author.username
-        )}" aria-label="Open ${escapeHtml(post.author.username)} profile">
-          ${escapeHtml(initials(post.author))}
+    <article class="task-card" data-task-id="${task.id}">
+      <div class="task-top">
+        <span class="priority ${task.priority}">${escapeHtml(task.priority)}</span>
+        <button class="task-link" type="button" data-action="open-task" data-task-id="${task.id}">
+          Details
         </button>
-        <div>
-          <strong>${escapeHtml(post.author.name)}</strong>
-          <span>@${escapeHtml(post.author.username)} · ${formatDate(
-            post.createdAt
-          )}</span>
-        </div>
       </div>
-
-      ${
-        isEditing
-          ? `
-            <textarea class="edit-input" maxlength="500">${escapeHtml(
-              post.content
-            )}</textarea>
-            <div class="post-actions">
-              <button class="action-button active" type="button" data-action="save-edit" data-id="${post.id}">Save</button>
-              <button class="action-button" type="button" data-action="cancel-edit" data-id="${post.id}">Cancel</button>
-            </div>
-          `
-          : `<p class="post-content">${escapeHtml(post.content)}</p>`
-      }
-
-      <div class="post-actions">
-        <button
-          class="action-button ${post.likedByMe ? "active" : ""}"
-          type="button"
-          data-action="${post.likedByMe ? "unlike" : "like"}"
-          data-id="${post.id}"
-        >
-          ${post.likedByMe ? "Unlike" : "Like"} · ${post.likeCount}
-        </button>
-        <button class="action-button" type="button" data-action="toggle-comments" data-id="${post.id}">
-          Comments · ${post.commentCount}
-        </button>
-        ${ownerActions}
+      <h3>${escapeHtml(task.title)}</h3>
+      <p>${escapeHtml(task.description || "No extra details.")}</p>
+      <div class="task-meta">
+        <span>${escapeHtml(task.assignee?.name || "Unassigned")}</span>
+        <span>${formatDate(task.dueDate)}</span>
       </div>
-
-      ${
-        commentsOpen
-          ? `
-            <div class="comments">
-              <form class="comment-form" data-post-id="${post.id}">
-                <input type="text" name="content" maxlength="240" placeholder="Add a comment" required />
-                <button class="button button-primary" type="submit">Reply</button>
-              </form>
-              <div class="comment-list">
-                ${
-                  comments.length
-                    ? comments.map(renderComment).join("")
-                    : `<div class="empty-state">No comments yet.</div>`
-                }
-              </div>
-            </div>
-          `
-          : ""
-      }
+      <div class="task-actions">
+        <select data-action="status" data-task-id="${task.id}" aria-label="Task status">
+          ${columns
+            .map(
+              (column) => `
+                <option value="${column.id}" ${column.id === task.status ? "selected" : ""}>
+                  ${column.label}
+                </option>
+              `
+            )
+            .join("")}
+        </select>
+        <span>${task.commentCount} comments</span>
+      </div>
     </article>
   `;
 }
 
-function renderComment(comment) {
-  return `
-    <div class="comment-row">
-      <div>
-        <strong>${escapeHtml(comment.author.name)}</strong>
-        <span class="meta">@${escapeHtml(comment.author.username)} · ${formatDate(
-          comment.createdAt
-        )}</span>
-        <p>${escapeHtml(comment.content)}</p>
-      </div>
-      ${
-        comment.canDelete
-          ? `<button class="action-button" type="button" data-action="delete-comment" data-id="${comment.id}" data-post-id="${comment.post}">Delete</button>`
-          : ""
-      }
-    </div>
-  `;
-}
-
-function renderFeed() {
-  elements.feedList.innerHTML = state.feed.length
-    ? state.feed.map((post) => renderPost(post, "feed")).join("")
-    : `<div class="empty-state">Follow people or create your first post to start the feed.</div>`;
-}
-
-function renderProfile() {
-  if (!state.profile) {
-    elements.profileCard.innerHTML = "";
-    elements.profilePosts.innerHTML = "";
+function renderBoard() {
+  if (!state.activeProject) {
+    elements.board.innerHTML = `<div class="empty-state board-empty">Create or select a project to see the board.</div>`;
     return;
   }
 
-  const user = state.profile;
-  elements.profileCard.innerHTML = `
-    <div class="profile-top">
-      <div class="profile-main">
-        <span class="avatar">${escapeHtml(initials(user))}</span>
-        <div>
-          <h2>${escapeHtml(user.name)}</h2>
-          <p class="muted">@${escapeHtml(user.username)}</p>
-        </div>
-      </div>
-      ${
-        user.isMe
-          ? ""
-          : `<button class="button ${
-              user.isFollowing ? "button-ghost" : "button-primary"
-            }" type="button" data-action="${
-              user.isFollowing ? "unfollow-user" : "follow-user"
-            }" data-id="${user.id}">
-              ${user.isFollowing ? "Unfollow" : "Follow"}
-            </button>`
-      }
-    </div>
-    <p>${escapeHtml(user.bio || "No bio added yet.")}</p>
-    <div class="profile-stats">
-      <div class="stat"><strong>${user.postsCount}</strong><span>Posts</span></div>
-      <div class="stat"><strong>${user.followersCount}</strong><span>Followers</span></div>
-      <div class="stat"><strong>${user.followingCount}</strong><span>Following</span></div>
-    </div>
-  `;
-
-  elements.profilePosts.innerHTML = state.profilePosts.length
-    ? state.profilePosts.map((post) => renderPost(post, "profile")).join("")
-    : `<div class="empty-state">This profile has no posts yet.</div>`;
+  elements.board.innerHTML = columns
+    .map((column) => {
+      const tasks = state.tasks.filter((task) => task.status === column.id);
+      return `
+        <section class="column">
+          <div class="column-head">
+            <h2>${column.label}</h2>
+            <span>${tasks.length}</span>
+          </div>
+          <div class="column-tasks">
+            ${
+              tasks.length
+                ? tasks.map(renderTask).join("")
+                : `<div class="empty-state">No tasks here.</div>`
+            }
+          </div>
+        </section>
+      `;
+    })
+    .join("");
 }
 
-function upsertPost(updatedPost) {
-  state.feed = state.feed.map((post) =>
-    post.id === updatedPost.id ? updatedPost : post
-  );
-  state.profilePosts = state.profilePosts.map((post) =>
-    post.id === updatedPost.id ? updatedPost : post
-  );
+function renderAll() {
+  renderProfile();
+  renderProjects();
+  renderBoardHead();
+  renderAssignees();
+  renderBoard();
 }
 
 async function loadCurrentUser() {
   const { user } = await api("/api/auth/me");
   state.currentUser = user;
-  renderMiniProfile();
 }
 
-async function loadFeed() {
-  const { posts } = await api("/api/posts");
-  state.feed = posts;
-  renderFeed();
+async function loadProjects() {
+  const { projects } = await api("/api/projects");
+  state.projects = projects;
+  if (!state.activeProject && projects.length) {
+    await loadProject(projects[0].id);
+  }
 }
 
-async function loadProfile(username = state.currentUser.username) {
-  const [{ user }, { posts }] = await Promise.all([
-    api(`/api/users/${encodeURIComponent(username)}`),
-    api(`/api/users/${encodeURIComponent(username)}/posts`)
-  ]);
-  state.profile = user;
-  state.profilePosts = posts;
-  renderProfile();
-  setActiveView("profile");
-}
-
-async function loadComments(postId) {
-  const { comments } = await api(`/api/posts/${postId}/comments`);
-  state.comments[postId] = comments;
+async function loadProject(projectId) {
+  const { project, tasks } = await api(`/api/projects/${projectId}`);
+  state.activeProject = project;
+  state.tasks = tasks;
+  const index = state.projects.findIndex((item) => item.id === project.id);
+  if (index >= 0) {
+    state.projects[index] = { ...state.projects[index], ...project, taskCount: tasks.length };
+  }
+  renderAll();
 }
 
 async function bootstrap() {
   if (!state.token) {
     setAuthenticated(false);
+    renderAll();
     return;
   }
 
   try {
     await loadCurrentUser();
     setAuthenticated(true);
-    await loadFeed();
-    setActiveView("feed");
+    await loadProjects();
+    renderAll();
   } catch (error) {
-    localStorage.removeItem("socialsphere_token");
+    localStorage.removeItem("taskflow_token");
     state.token = null;
     setAuthenticated(false);
     showToast(error.message, "error");
@@ -352,12 +310,11 @@ elements.loginForm.addEventListener("submit", async (event) => {
     });
     state.token = token;
     state.currentUser = user;
-    localStorage.setItem("socialsphere_token", token);
+    localStorage.setItem("taskflow_token", token);
     setAuthenticated(true);
-    renderMiniProfile();
-    await loadFeed();
-    setActiveView("feed");
-    showToast("Logged in successfully.");
+    await loadProjects();
+    renderAll();
+    showToast("Workspace opened.");
   } catch (error) {
     showToast(error.message, "error");
   }
@@ -375,254 +332,230 @@ elements.registerForm.addEventListener("submit", async (event) => {
     });
     state.token = token;
     state.currentUser = user;
-    localStorage.setItem("socialsphere_token", token);
+    localStorage.setItem("taskflow_token", token);
     setAuthenticated(true);
-    renderMiniProfile();
-    await loadFeed();
-    setActiveView("feed");
+    await loadProjects();
+    renderAll();
     showToast("Account created.");
   } catch (error) {
     showToast(error.message, "error");
   }
 });
 
-elements.logoutButton.addEventListener("click", async () => {
-  try {
-    await api("/api/auth/logout", { method: "POST" });
-  } catch (error) {
-    // JWT logout is stateless, so local cleanup is still valid.
-  }
-
+elements.logoutButton.addEventListener("click", () => {
+  localStorage.removeItem("taskflow_token");
   state.token = null;
   state.currentUser = null;
-  localStorage.removeItem("socialsphere_token");
+  state.projects = [];
+  state.activeProject = null;
+  state.tasks = [];
   setAuthenticated(false);
-  showToast("Logged out.");
+  renderAll();
+  showToast("Signed out.");
 });
 
-document.querySelector(".brand").addEventListener("click", async (event) => {
+elements.refreshBoard.addEventListener("click", async () => {
+  if (state.activeProject) {
+    await loadProject(state.activeProject.id);
+  } else {
+    await loadProjects();
+  }
+  showToast("Board refreshed.");
+});
+
+elements.projectForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (state.token) {
-    setActiveView("feed");
-    await loadFeed();
-  }
-});
-
-elements.appNav.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-view]");
-  if (!button) {
-    return;
-  }
-
-  if (button.dataset.view === "feed") {
-    setActiveView("feed");
-    await loadFeed();
-  }
-
-  if (button.dataset.view === "profile") {
-    await loadProfile();
-  }
-});
-
-elements.postContent.addEventListener("input", () => {
-  elements.postCount.textContent = `${elements.postContent.value.length}/500`;
-});
-
-elements.postForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const content = elements.postContent.value.trim();
-
-  if (!content) {
-    return;
-  }
+  const formData = Object.fromEntries(new FormData(event.currentTarget));
 
   try {
-    const { post } = await api("/api/posts", {
+    const { project } = await api("/api/projects", {
       method: "POST",
-      body: JSON.stringify({ content })
+      body: JSON.stringify(formData)
     });
-    state.feed = [post, ...state.feed];
-    if (state.profile?.isMe) {
-      state.profilePosts = [post, ...state.profilePosts];
-      state.profile.postsCount += 1;
-    }
-    elements.postContent.value = "";
-    elements.postCount.textContent = "0/500";
-    renderFeed();
-    renderProfile();
-    showToast("Post published.");
+    state.projects = [project, ...state.projects];
+    event.currentTarget.reset();
+    await loadProject(project.id);
+    showToast("Project created.");
   } catch (error) {
     showToast(error.message, "error");
   }
 });
 
-elements.refreshFeed.addEventListener("click", async () => {
-  await loadFeed();
-  showToast("Feed refreshed.");
+elements.projectList.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-project-id]");
+  if (!button) {
+    return;
+  }
+  await loadProject(button.dataset.projectId);
 });
 
-document.addEventListener("submit", async (event) => {
-  const form = event.target.closest(".comment-form");
-  if (!form) {
-    return;
-  }
-
+elements.memberForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const postId = form.dataset.postId;
-  const input = form.elements.content;
-  const content = input.value.trim();
-
-  if (!content) {
+  if (!state.activeProject) {
     return;
   }
+  const formData = Object.fromEntries(new FormData(event.currentTarget));
 
   try {
-    await api(`/api/posts/${postId}/comments`, {
+    const { project } = await api(`/api/projects/${state.activeProject.id}/members`, {
       method: "POST",
-      body: JSON.stringify({ content })
+      body: JSON.stringify(formData)
     });
-    input.value = "";
-    await loadComments(postId);
-    await loadFeed();
-    if (state.profile) {
-      const username = state.profile.username;
-      const { posts } = await api(`/api/users/${encodeURIComponent(username)}/posts`);
-      state.profilePosts = posts;
-    }
-    renderFeed();
-    renderProfile();
+    state.activeProject = { ...state.activeProject, ...project };
+    event.currentTarget.reset();
+    renderAll();
+    showToast("Member added.");
   } catch (error) {
     showToast(error.message, "error");
   }
 });
 
-document.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-action]");
-  if (!button) {
+elements.taskForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.activeProject) {
     return;
   }
 
-  const action = button.dataset.action;
-  const id = button.dataset.id;
+  const formData = Object.fromEntries(new FormData(event.currentTarget));
+  try {
+    const { task } = await api(`/api/projects/${state.activeProject.id}/tasks`, {
+      method: "POST",
+      body: JSON.stringify(formData)
+    });
+    state.tasks = [task, ...state.tasks];
+    event.currentTarget.reset();
+    renderAll();
+    showToast("Task added.");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+});
+
+elements.board.addEventListener("change", async (event) => {
+  const select = event.target.closest('select[data-action="status"]');
+  if (!select || !state.activeProject) {
+    return;
+  }
+
+  const task = state.tasks.find((item) => item.id === select.dataset.taskId);
+  if (!task) {
+    return;
+  }
 
   try {
-    if (action === "open-profile") {
-      await loadProfile(button.dataset.username);
-    }
-
-    if (action === "like" || action === "unlike") {
-      const { post } = await api(`/api/posts/${id}/like`, {
-        method: action === "like" ? "POST" : "DELETE"
-      });
-      upsertPost(post);
-      renderFeed();
-      renderProfile();
-    }
-
-    if (action === "toggle-comments") {
-      if (state.openComments.has(id)) {
-        state.openComments.delete(id);
-      } else {
-        state.openComments.add(id);
-        await loadComments(id);
-      }
-      renderFeed();
-      renderProfile();
-    }
-
-    if (action === "edit") {
-      state.editingPostId = id;
-      renderFeed();
-      renderProfile();
-    }
-
-    if (action === "cancel-edit") {
-      state.editingPostId = null;
-      renderFeed();
-      renderProfile();
-    }
-
-    if (action === "save-edit") {
-      const card = button.closest(".post-card");
-      const content = card.querySelector(".edit-input").value.trim();
-      const { post } = await api(`/api/posts/${id}`, {
+    const { task: updatedTask } = await api(
+      `/api/projects/${state.activeProject.id}/tasks/${task.id}`,
+      {
         method: "PUT",
-        body: JSON.stringify({ content })
-      });
-      state.editingPostId = null;
-      upsertPost(post);
-      renderFeed();
-      renderProfile();
-      showToast("Post updated.");
-    }
-
-    if (action === "delete") {
-      const confirmed = window.confirm("Delete this post?");
-      if (!confirmed) {
-        return;
+        body: JSON.stringify({ status: select.value })
       }
+    );
+    state.tasks = state.tasks.map((item) => (item.id === updatedTask.id ? updatedTask : item));
+    renderBoard();
+  } catch (error) {
+    showToast(error.message, "error");
+    renderBoard();
+  }
+});
 
-      await api(`/api/posts/${id}`, { method: "DELETE" });
-      state.feed = state.feed.filter((post) => post.id !== id);
-      state.profilePosts = state.profilePosts.filter((post) => post.id !== id);
-      if (state.profile?.isMe) {
-        state.profile.postsCount = Math.max(0, state.profile.postsCount - 1);
+elements.board.addEventListener("click", async (event) => {
+  const button = event.target.closest('[data-action="open-task"]');
+  if (!button || !state.activeProject) {
+    return;
+  }
+
+  state.activeTask = state.tasks.find((task) => task.id === button.dataset.taskId);
+  if (!state.activeTask) {
+    return;
+  }
+
+  const { comments } = await api(
+    `/api/projects/${state.activeProject.id}/tasks/${state.activeTask.id}/comments`
+  );
+  state.comments = comments;
+  renderTaskDetail();
+  elements.taskDialog.showModal();
+});
+
+function renderTaskDetail() {
+  const task = state.activeTask;
+  if (!task) {
+    elements.taskDetail.innerHTML = "";
+    return;
+  }
+
+  elements.taskDetail.innerHTML = `
+    <div class="detail-head">
+      <span class="priority ${task.priority}">${escapeHtml(task.priority)}</span>
+      <h2>${escapeHtml(task.title)}</h2>
+      <p>${escapeHtml(task.description || "No task description.")}</p>
+      <div class="task-meta">
+        <span>Assigned to ${escapeHtml(task.assignee?.name || "nobody yet")}</span>
+        <span>Due ${formatDate(task.dueDate)}</span>
+      </div>
+    </div>
+
+    <form class="comment-form" id="commentForm">
+      <input type="text" name="content" maxlength="240" placeholder="Write a task comment" required />
+      <button class="button button-primary" type="submit">Comment</button>
+    </form>
+
+    <div class="comment-list">
+      ${
+        state.comments.length
+          ? state.comments
+              .map(
+                (comment) => `
+                  <div class="comment">
+                    <strong>${escapeHtml(comment.author.name)}</strong>
+                    <p>${escapeHtml(comment.content)}</p>
+                    <small>${formatDate(comment.createdAt)}</small>
+                  </div>
+                `
+              )
+              .join("")
+          : `<div class="empty-state">No comments yet.</div>`
       }
-      renderFeed();
-      renderProfile();
-      showToast("Post deleted.");
-    }
+    </div>
+  `;
+}
 
-    if (action === "delete-comment") {
-      await api(`/api/comments/${id}`, { method: "DELETE" });
-      await loadComments(button.dataset.postId);
-      renderFeed();
-      renderProfile();
-    }
+elements.taskDetail.addEventListener("submit", async (event) => {
+  const form = event.target.closest("#commentForm");
+  if (!form || !state.activeProject || !state.activeTask) {
+    return;
+  }
 
-    if (action === "follow-user" || action === "unfollow-user") {
-      await api(`/api/users/${id}/follow`, {
-        method: action === "follow-user" ? "POST" : "DELETE"
-      });
-      await loadProfile(state.profile.username);
-      await loadFeed();
-      showToast(action === "follow-user" ? "User followed." : "User unfollowed.");
-    }
+  event.preventDefault();
+  const formData = Object.fromEntries(new FormData(form));
+
+  try {
+    const { comment } = await api(
+      `/api/projects/${state.activeProject.id}/tasks/${state.activeTask.id}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify(formData)
+      }
+    );
+    state.comments = [...state.comments, comment];
+    state.tasks = state.tasks.map((task) =>
+      task.id === state.activeTask.id
+        ? { ...task, commentCount: task.commentCount + 1 }
+        : task
+    );
+    state.activeTask = state.tasks.find((task) => task.id === state.activeTask.id);
+    renderTaskDetail();
+    renderBoard();
   } catch (error) {
     showToast(error.message, "error");
   }
 });
 
-let searchTimeout;
-elements.searchUsers.addEventListener("input", () => {
-  window.clearTimeout(searchTimeout);
-  searchTimeout = window.setTimeout(async () => {
-    const query = elements.searchUsers.value.trim();
-    if (!query) {
-      elements.searchResults.innerHTML = "";
-      return;
-    }
-
-    try {
-      const { users } = await api(`/api/users/search?q=${encodeURIComponent(query)}`);
-      elements.searchResults.innerHTML = users.length
-        ? users
-            .map(
-              (user) => `
-                <button class="search-result" type="button" data-action="open-profile" data-username="${escapeHtml(
-                  user.username
-                )}">
-                  <span>${escapeHtml(user.name)}</span>
-                  <span class="meta">@${escapeHtml(user.username)}</span>
-                </button>
-              `
-            )
-            .join("")
-        : `<div class="empty-state">No people found.</div>`;
-    } catch (error) {
-      showToast(error.message, "error");
-    }
-  }, 250);
+document.querySelector(".brand").addEventListener("click", (event) => {
+  event.preventDefault();
+  if (state.activeProject) {
+    loadProject(state.activeProject.id);
+  }
 });
 
 bootstrap();
